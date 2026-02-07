@@ -70,3 +70,7 @@ tmp/
 datasets
 
 __pycache__
+
+hf_cache/
+cache/
+save/
