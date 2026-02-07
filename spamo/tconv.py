@@ -6,6 +6,82 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 
+class AdaptiveNorm1d(nn.Module):
+    """
+    Normalization layer that uses BatchNorm1d when possible (temporal dim > 1),
+    but falls back to LayerNorm when temporal dimension is 1 to avoid errors.
+    This preserves BatchNorm behavior in most cases while handling edge cases.
+    """
+    def __init__(self, num_features):
+        super(AdaptiveNorm1d, self).__init__()
+        self.bn = nn.BatchNorm1d(num_features)
+        self.ln = nn.LayerNorm(num_features)
+        self.num_features = num_features
+    
+    def forward(self, x):
+        # x shape: (batch, channels, temporal)
+        if x.shape[2] > 1:
+            # Use BatchNorm when we have multiple temporal positions
+            return self.bn(x)
+        else:
+            # Use LayerNorm when temporal dim is 1
+            # LayerNorm expects (batch, seq_len, features), so permute
+            x_permuted = x.permute(0, 2, 1)  # (batch, temporal, channels)
+            normalized = self.ln(x_permuted)
+            return normalized.permute(0, 2, 1)  # back to (batch, channels, temporal)
+
+
+class SafeMaxPool1d(nn.Module):
+    """
+    MaxPool1d wrapper that handles cases where the input temporal dimension
+    is too small for the pooling operation. If the input is too small, it uses
+    adaptive pooling to ensure at least size 1 output.
+    """
+    def __init__(self, kernel_size, ceil_mode=False):
+        super(SafeMaxPool1d, self).__init__()
+        self.kernel_size = kernel_size
+        self.ceil_mode = ceil_mode
+        self.pool = nn.MaxPool1d(kernel_size=kernel_size, ceil_mode=ceil_mode)
+        self.adaptive_pool = nn.AdaptiveMaxPool1d(1)
+    
+    def forward(self, x):
+        # x shape: (batch, channels, temporal)
+        temporal_dim = x.shape[2]
+        
+        # If input is too small for regular pooling, use adaptive pooling
+        if temporal_dim < self.kernel_size:
+            # Use adaptive pooling to get at least size 1 output
+            return self.adaptive_pool(x)
+        else:
+            # Use regular pooling
+            return self.pool(x)
+
+
+class SafeConv1d(nn.Module):
+    """
+    Conv1d wrapper that handles cases where the input temporal dimension
+    is too small for the convolution operation. If the input is too small,
+    it pads the input to match the kernel size before applying convolution.
+    """
+    def __init__(self, in_channels, out_channels, kernel_size, stride=1, padding=0):
+        super(SafeConv1d, self).__init__()
+        self.kernel_size = kernel_size
+        self.conv = nn.Conv1d(in_channels, out_channels, kernel_size=kernel_size, stride=stride, padding=padding)
+    
+    def forward(self, x):
+        # x shape: (batch, channels, temporal)
+        temporal_dim = x.shape[2]
+        
+        # If input is too small for convolution, pad it
+        if temporal_dim < self.kernel_size:
+            # Calculate padding needed
+            pad_size = self.kernel_size - temporal_dim
+            # Pad on the right side (end of sequence)
+            x = F.pad(x, (0, pad_size), mode='replicate')
+        
+        return self.conv(x)
+
+
 class TemporalConv(nn.Module):
     def __init__(self, input_size, hidden_size, conv_type=2, num_classes=-1):
         super(TemporalConv, self).__init__()
@@ -37,13 +113,16 @@ class TemporalConv(nn.Module):
         for layer_idx, ks in enumerate(self.kernel_size):
             input_sz = self.input_size if layer_idx == 0 or self.conv_type == 6 and layer_idx == 1 or self.conv_type == 7 and layer_idx == 1 or self.conv_type == 8 and layer_idx == 2 else self.hidden_size
             if ks[0] == 'P':
-                modules.append(nn.MaxPool1d(kernel_size=int(ks[1]), ceil_mode=False))
+                # Use SafeMaxPool1d to handle small temporal dimensions
+                modules.append(SafeMaxPool1d(kernel_size=int(ks[1]), ceil_mode=False))
             elif ks[0] == 'K':
+                # Use SafeConv1d to handle small temporal dimensions
                 modules.append(
-                    nn.Conv1d(input_sz, self.hidden_size, kernel_size=int(ks[1]), stride=1, padding=0)
+                    SafeConv1d(input_sz, self.hidden_size, kernel_size=int(ks[1]), stride=1, padding=0)
                     #MultiScale_TemporalConv(input_sz, self.hidden_size)
                 )
-                modules.append(nn.BatchNorm1d(self.hidden_size))
+                # Use adaptive normalization that preserves BatchNorm when possible
+                modules.append(AdaptiveNorm1d(self.hidden_size))
                 modules.append(nn.ReLU(inplace=True))
         self.temporal_conv = nn.Sequential(*modules)
 
@@ -54,10 +133,14 @@ class TemporalConv(nn.Module):
         feat_len = copy.deepcopy(lgt)
         for ks in self.kernel_size:
             if ks[0] == 'P':
-                feat_len = torch.div(feat_len, 2)
+                # For pooling, divide by kernel size, but ensure at least 1
+                # Use floor division to match the pooling behavior
+                feat_len = feat_len // int(ks[1])
+                feat_len = torch.clamp(feat_len, min=1)
             else:
-                feat_len -= int(ks[1]) - 1
-                #pass
+                # For convolution, subtract (kernel_size - 1), but ensure at least 1
+                feat_len = feat_len - (int(ks[1]) - 1)
+                feat_len = torch.clamp(feat_len, min=1)
         return feat_len
 
     def forward(self, frame_feat, lgt):
@@ -76,7 +159,8 @@ class ResidualBlock(nn.Module):
     def __init__(self, channels, kernel_size=3, padding=1):
         super(ResidualBlock, self).__init__()
         self.conv1 = nn.Conv1d(channels, channels, kernel_size, padding=padding, stride=1)
-        self.bn1 = nn.BatchNorm1d(channels)
+        # Use adaptive normalization that preserves BatchNorm when possible
+        self.bn1 = AdaptiveNorm1d(channels)
         self.relu = nn.ReLU(inplace=True)
         
     def forward(self, x):
