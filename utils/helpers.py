@@ -71,7 +71,24 @@ def create_mask(seq_lengths: list, device="cpu"):
 def get_img_list(ds_name, vid_root, path):
     # Handling for different datasets
     if ds_name == 'Phoenix14T':
-        img_path = os.path.join(vid_root, 'features', 'fullFrame-256x256px', path)
+        # Check if vid_root already contains 'features' directory (user provided full path)
+        if 'features' in vid_root:
+            # vid_root already includes the full path, just append the path
+            img_path = os.path.join(vid_root, path)
+        else:
+            # Try both possible resolutions and use whichever exists
+            img_path_256 = os.path.join(vid_root, 'features', 'fullFrame-256x256px', path)
+            img_path_210 = os.path.join(vid_root, 'features', 'fullFrame-210x260px', path)
+            # Check which path has files
+            files_256 = glob.glob(img_path_256)
+            files_210 = glob.glob(img_path_210)
+            if files_210:
+                img_path = img_path_210
+            elif files_256:
+                img_path = img_path_256
+            else:
+                # Default to 256x256px if neither exists (will return empty list)
+                img_path = img_path_256
     elif ds_name == 'CSL-Daily':
         img_path = os.path.join(vid_root, 'CSL-Daily_256x256px', path)
     else:
