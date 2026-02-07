@@ -96,6 +96,11 @@ def get_iterator(args, mode):
             
             if ds_name == 'Phoenix14T' or ds_name == 'CSL-Daily':
                 image_list = get_img_list(ds_name, args.video_root, fname)
+                if len(image_list) == 0:
+                    print(f"Warning: No images found for {fname}, skipping...")
+                    yield np.array([]), data[i]['fileid'], None
+                    continue
+                    
                 videos = [Image.open(image).convert('RGB') for image in image_list]
                 
                 video_feats = []
@@ -104,7 +109,11 @@ def get_iterator(args, mode):
                     feats = reader.get_feats(video_batch).cpu().numpy()
                     video_feats.append(feats)
                 
-                yield np.concatenate(video_feats, axis=0), data[i]['fileid'], None
+                if len(video_feats) == 0:
+                    print(f"Warning: No features extracted for {fname}, skipping...")
+                    yield np.array([]), data[i]['fileid'], None
+                else:
+                    yield np.concatenate(video_feats, axis=0), data[i]['fileid'], None
             
             else:
                 if ds_name == 'How2Sign':
