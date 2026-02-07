@@ -8,7 +8,7 @@ identify==2.6.9
 lightning==1.9.5
 lightning-cloud==0.5.70
 lightning-utilities==0.14.0
-pytorch_lightning==1.9.5
+pytorch_lightning==2.6.0
 numpy==1.26.4
 peft==0.7.1
 pillow==10.2.0
@@ -16,7 +16,10 @@ portalocker==3.1.1
 sacrebleu==2.2.0
 sentry-sdk==2.22.0
 setproctitle==1.3.5
-torch==2.0.1
+# Note: Install PyTorch nightly build with CUDA 12.8 support for RTX 5060 Ti (sm_120):
+# pip install --pre torch torchvision torchaudio --index-url https://download.pytorch.org/whl/nightly/cu128
+# Nightly builds are recommended for better sm_120/Blackwell architecture support
+torch
 transformers==4.32.0
 wandb==0.16.0
 omegaconf
