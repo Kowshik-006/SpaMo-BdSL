@@ -1,0 +1,88 @@
+# Example config for Banglagov. Replace paths with your actual dirs.
+# See preprocess/README_BANGLAGOV.md for preprocessing steps.
+
+model:
+  target: spamo.t5_slt.FlanT5SLT
+  params:
+    lr: 6.0e-4
+    monitor: val/bleu4
+    model_name: google/flan-t5-base
+    cache_dir: /home/mdsr/CSLT-Kowshik-Adiba/SpaMo-BdSL/hf_cache
+    inter_hidden: 768
+    input_size: 2048
+    beam_size: 5
+    max_frame_len: 256
+    max_txt_len: 64
+    frame_sample_rate: 2
+    prompt: "Translate the given sentence into {}."
+    tuning_type: lora
+    lora_r: 16
+    lora_alpha: 32
+    lora_dropout: 0.1
+    fusion_mode: joint
+    warm_up_steps: 0
+    cross_modal_align: true
+    combined_loss: true
+    alpha: 1.0
+    use_in_context: false
+    num_in_context: 0
+
+lightning:
+  callback:
+    learning_rate_logger:
+      target: pytorch_lightning.callbacks.LearningRateMonitor
+      params:
+        logging_interval: step
+  trainer:
+    accumulate_grad_batches: 4
+    accelerator: gpu
+    devices: 1
+    max_epochs: 100
+    gradient_clip_val: 1.0
+    check_val_every_n_epoch: 2
+    precision: bf16
+
+data:
+  target: dataset.datamodule.DataModuleFromConfig
+  params:
+    batch_size: 4
+    num_workers: 4
+    train:
+      target: dataset.p14t.Phoenix14T
+      params:
+        anno_root: ./preprocess/Banglagov_subset
+        vid_root: /home/mdsr/CSLT-Kowshik-Adiba/banglagov/frame_root
+        feat_root: /home/mdsr/CSLT-Kowshik-Adiba/SpaMo-BdSL/save/banglagov_vit_sub/clip-vit-large-patch14_feat_Banglagov_subset
+        mae_feat_root: /home/mdsr/CSLT-Kowshik-Adiba/SpaMo-BdSL/save/banglagov_mae_sub/mae_feat_Banglagov_subset
+        mode: train
+        spatial: true
+        spatiotemporal: true
+        spatial_postfix: _s2wrapping
+        spatiotemporal_postfix: _overlap-8
+        lang: Bengali
+    validation:
+      target: dataset.p14t.Phoenix14T
+      params:
+        anno_root: ./preprocess/Banglagov_subset
+        vid_root: /home/mdsr/CSLT-Kowshik-Adiba/banglagov/frame_root
+        feat_root: /home/mdsr/CSLT-Kowshik-Adiba/SpaMo-BdSL/save/banglagov_vit_sub/clip-vit-large-patch14_feat_Banglagov_subset
+        mae_feat_root: /home/mdsr/CSLT-Kowshik-Adiba/SpaMo-BdSL/save/banglagov_mae_sub/mae_feat_Banglagov_subset
+        mode: dev
+        spatial: true
+        spatiotemporal: true
+        spatial_postfix: _s2wrapping
+        spatiotemporal_postfix: _overlap-8
+        lang: Bengali
+    test:
+      target: dataset.p14t.Phoenix14T
+      params:
+        anno_root: ./preprocess/Banglagov_subset
+        vid_root: /home/mdsr/CSLT-Kowshik-Adiba/banglagov/frame_root
+        feat_root: /home/mdsr/CSLT-Kowshik-Adiba/SpaMo-BdSL/save/banglagov_vit_sub/clip-vit-large-patch14_feat_Banglagov_subset
+        mae_feat_root: /home/mdsr/CSLT-Kowshik-Adiba/SpaMo-BdSL/save/banglagov_mae_sub/mae_feat_Banglagov_subset
+        mode: test
+        spatial: true
+        spatiotemporal: true
+        spatial_postfix: _s2wrapping
+        spatiotemporal_postfix: _overlap-8
+        lang: Bengali
