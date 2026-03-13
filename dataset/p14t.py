@@ -50,8 +50,10 @@ class Phoenix14T(torch.utils.data.Dataset):
         self.mode = mode
         self.spatial = spatial
         self.spatiotemporal = spatiotemporal
-        self.spatial_postfix = spatial_postfix
-        self.spatiotemporal_postfix = spatiotemporal_postfix
+        # self.spatial_postfix = spatial_postfix
+        # self.spatiotemporal_postfix = spatiotemporal_postfix
+        self.spatial_postfix = ""
+        self.spatiotemporal_postfix = ""
         
         # Validate inputs
         if not (spatial or spatiotemporal):
