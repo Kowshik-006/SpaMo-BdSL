@@ -5,7 +5,7 @@ model:
     lr: 6.0e-4
     monitor: val/bleu4
     model_name: google/flan-t5-xl
-    cache_dir: /data3/models
+    cache_dir: /media/srbd4090b/61fed03e-e625-4aad-ae6c-b9c45cd1bb46/kowshik/SpaMo-BdSL/hf_cache
     inter_hidden: 768
     input_size: 2048
     beam_size: 5
