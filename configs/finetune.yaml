@@ -5,7 +5,7 @@ model:
     lr: 6.0e-4
     monitor: val/bleu4
     model_name: google/flan-t5-xl
-    cache_dir: /media/srbd4090b/61fed03e-e625-4aad-ae6c-b9c45cd1bb46/kowshik/SpaMo-BdSL/hf_cache
+    cache_dir: /home/mdsr/CSLT-Kowshik-Adiba/SpaMo-BdSL/hf_cache
     inter_hidden: 768
     input_size: 2048
     beam_size: 5
@@ -50,9 +50,9 @@ data:
       target: dataset.p14t.Phoenix14T
       params:
         anno_root: ./preprocess/Phoenix14T
-        vid_root: /media/srbd4090b/61fed03e-e625-4aad-ae6c-b9c45cd1bb46/kowshik/PHOENIX-2014-T-release-v3/PHOENIX-2014-T
-        feat_root: /media/srbd4090b/61fed03e-e625-4aad-ae6c-b9c45cd1bb46/kowshik/spatial
-        mae_feat_root: /media/srbd4090b/61fed03e-e625-4aad-ae6c-b9c45cd1bb46/kowshik/motion
+        vid_root: /home/mdsr/CSLT-Kowshik-Adiba/phoenix-2014-T.v3/PHOENIX-2014-T-release-v3/PHOENIX-2014-T
+        feat_root: /home/mdsr/CSLT-Kowshik-Adiba/preextracted-phoenix/spatial
+        mae_feat_root: /home/mdsr/CSLT-Kowshik-Adiba/preextracted-phoenix/motion
         mode: train
         spatial: true
         spatiotemporal: true
@@ -63,9 +63,9 @@ data:
       target: dataset.p14t.Phoenix14T
       params:
         anno_root: ./preprocess/Phoenix14T
-        vid_root: /media/srbd4090b/61fed03e-e625-4aad-ae6c-b9c45cd1bb46/kowshik/PHOENIX-2014-T-release-v3/PHOENIX-2014-T
-        feat_root: /media/srbd4090b/61fed03e-e625-4aad-ae6c-b9c45cd1bb46/kowshik/spatial
-        mae_feat_root: /media/srbd4090b/61fed03e-e625-4aad-ae6c-b9c45cd1bb46/kowshik/motion
+        vid_root: /home/mdsr/CSLT-Kowshik-Adiba/phoenix-2014-T.v3/PHOENIX-2014-T-release-v3/PHOENIX-2014-T
+        feat_root: /home/mdsr/CSLT-Kowshik-Adiba/preextracted-phoenix/spatial
+        mae_feat_root: /home/mdsr/CSLT-Kowshik-Adiba/preextracted-phoenix/motion
         mode: test
         spatial: true
         spatiotemporal: true
@@ -76,9 +76,9 @@ data:
       target: dataset.p14t.Phoenix14T
       params:
         anno_root: ./preprocess/Phoenix14T
-        vid_root: /media/srbd4090b/61fed03e-e625-4aad-ae6c-b9c45cd1bb46/kowshik/PHOENIX-2014-T-release-v3/PHOENIX-2014-T
-        feat_root: /media/srbd4090b/61fed03e-e625-4aad-ae6c-b9c45cd1bb46/kowshik/spatial
-        mae_feat_root: /media/srbd4090b/61fed03e-e625-4aad-ae6c-b9c45cd1bb46/kowshik/motion
+        vid_root: /home/mdsr/CSLT-Kowshik-Adiba/phoenix-2014-T.v3/PHOENIX-2014-T-release-v3/PHOENIX-2014-T
+        feat_root: /home/mdsr/CSLT-Kowshik-Adiba/preextracted-phoenix/spatial
+        mae_feat_root: /home/mdsr/CSLT-Kowshik-Adiba/preextracted-phoenix/motion
         mode: test
         spatial: true
         spatiotemporal: true
