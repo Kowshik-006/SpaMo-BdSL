@@ -5,14 +5,27 @@ import os
 import glob
 
 
-def derangement(lst):
-    assert len(lst) > 1, "List must have at least two elements."
+# def derangement(lst):
+#     assert len(lst) > 1, "List must have at least two elements."
     
-    while True:
+#     while True:
+#         shuffled = lst[:]
+#         random.shuffle(shuffled)
+#         if all(original != shuffled[i] for i, original in enumerate(lst)):
+#             return shuffled
+
+def derangement(lst, max_tries: int = 1000):
+    # If 0 or 1 element, nothing to derange
+    if len(lst) <= 1:
+        return lst
+    # Try a finite number of times to find a derangement
+    for _ in range(max_tries):
         shuffled = lst[:]
         random.shuffle(shuffled)
         if all(original != shuffled[i] for i, original in enumerate(lst)):
             return shuffled
+    # Fallback: no derangement found (e.g. all elements identical) – just return original
+    return lst
 
 
 def normalize(x):
