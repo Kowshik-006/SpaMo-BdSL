@@ -182,6 +182,7 @@ def configure_callbacks(
             monitor=model.monitor, 
             auto_insert_metric_name=False, 
             save_top_k=1, 
+            save_last=True,
             mode="max"
         ))
         callbacks.append(EarlyStopping(
@@ -194,6 +195,7 @@ def configure_callbacks(
             monitor=model.monitor, 
             auto_insert_metric_name=False, 
             save_top_k=1, 
+            save_last=True,
             mode="min"
         ))
         callbacks.append(EarlyStopping(
