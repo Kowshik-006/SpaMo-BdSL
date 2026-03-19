@@ -70,7 +70,7 @@ def main():
     video_extensions = ('.mp4', '.avi', '.mov', '.mkv', '.wmv', '.flv', '.webm')
 
     for sid in tqdm(sentence_ids, desc="Processing sentences"):
-        video_dir = os.path.join(args.dataset_root, 'Sign_Videos', sid, 'video')
+        video_dir = os.path.join(args.dataset_root, 'Sign_Videos', sid)
 
         if not os.path.exists(video_dir):
             print(f"Warning: Video directory not found: {video_dir}")
