@@ -86,9 +86,9 @@ data:
       target: dataset.banglagov.BanglagovDataset
       params:
         anno_root: ./preprocess/Banglagov
-        frame_root: /path/to/extracted_frames
-        feat_root: /path/to/preextracted-banglagov/clip-vit-large-patch14_feat_Banglagov
-        mae_feat_root: /path/to/preextracted-banglagov/mae_feat_Banglagov
+        frame_root: /home/mdsr/CSLT-Kowshik-Adiba/Banglagov_Dataset/frame_root
+        feat_root: /home/mdsr/CSLT-Kowshik-Adiba/SpaMo-BdSL/save/Banglagov/clip-vit-large-patch14_feat_Banglagov
+        mae_feat_root: /home/mdsr/CSLT-Kowshik-Adiba/SpaMo-BdSL/save/Banglagov/mae_feat_Banglagov
         mode: train
         spatial: true
         spatiotemporal: true
@@ -99,9 +99,9 @@ data:
       target: dataset.banglagov.BanglagovDataset
       params:
         anno_root: ./preprocess/Banglagov
-        frame_root: /path/to/extracted_frames
-        feat_root: /path/to/preextracted-banglagov/clip-vit-large-patch14_feat_Banglagov
-        mae_feat_root: /path/to/preextracted-banglagov/mae_feat_Banglagov
+        frame_root: /home/mdsr/CSLT-Kowshik-Adiba/Banglagov_Dataset/frame_root
+        feat_root: /home/mdsr/CSLT-Kowshik-Adiba/SpaMo-BdSL/save/Banglagov/clip-vit-large-patch14_feat_Banglagov
+        mae_feat_root: /home/mdsr/CSLT-Kowshik-Adiba/SpaMo-BdSL/save/Banglagov/mae_feat_Banglagov
         mode: dev
         spatial: true
         spatiotemporal: true
@@ -112,9 +112,9 @@ data:
       target: dataset.banglagov.BanglagovDataset
       params:
         anno_root: ./preprocess/Banglagov
-        frame_root: /path/to/extracted_frames
-        feat_root: /path/to/preextracted-banglagov/clip-vit-large-patch14_feat_Banglagov
-        mae_feat_root: /path/to/preextracted-banglagov/mae_feat_Banglagov
+        frame_root: /home/mdsr/CSLT-Kowshik-Adiba/Banglagov_Dataset/frame_root
+        feat_root: /home/mdsr/CSLT-Kowshik-Adiba/SpaMo-BdSL/save/Banglagov/clip-vit-large-patch14_feat_Banglagov
+        mae_feat_root: /home/mdsr/CSLT-Kowshik-Adiba/SpaMo-BdSL/save/Banglagov/mae_feat_Banglagov
         mode: test
         spatial: true
         spatiotemporal: true
