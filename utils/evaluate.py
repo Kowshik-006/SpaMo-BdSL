@@ -2,7 +2,7 @@ from rouge_score import rouge_scorer
 from sacrebleu.metrics import BLEU, CHRF, TER
 
 
-def evaluate_results(predictions, references, split="train", device='cpu', tokenizer='13a'):
+def evaluate_results(predictions, references, split="train", device='cpu', tokenizer='13a', use_stemmer=True):
     """
     Evaluate prediction results using BLEU and ROUGE metrics.
 
@@ -26,7 +26,7 @@ def evaluate_results(predictions, references, split="train", device='cpu', token
             log_dicts[f"{split}/bleu" + str(i)] = score
 
         # Calculate ROUGE-L score
-        scorer = rouge_scorer.RougeScorer(['rougeL'], use_stemmer=True)
+        scorer = rouge_scorer.RougeScorer(['rougeL'], use_stemmer=use_stemmer)
         rouge_scores = [scorer.score(ref, pred)['rougeL'] for ref, pred in zip(references, predictions)]
         
         # Aggregate ROUGE-L scores (average precision, recall, and F1)

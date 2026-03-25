@@ -419,7 +419,8 @@ class BanglaT5SLT(AbstractSLT):
             predictions=self.generated,
             references=self.references,
             split='val',
-            device=self.device
+            device=self.device,
+            use_stemmer=False
         )
 
         self.log_dict(eval_res, sync_dist=True)
@@ -436,7 +437,8 @@ class BanglaT5SLT(AbstractSLT):
             predictions=self.generated,
             references=self.references,
             split='test',
-            device=self.device
+            device=self.device,
+            use_stemmer=False
         )
 
         self.log_dict(eval_res, sync_dist=True)
