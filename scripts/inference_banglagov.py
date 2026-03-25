@@ -161,8 +161,8 @@ def main():
     model = model.to(device).eval()
 
     sample = {
-        'pixel_value': vit_features,
-        'glor_value': mae_features,
+        'pixel_value': vit_features.to(device),
+        'glor_value': mae_features.to(device),
         'num_frames': len(vit_features),
         'id': 'inference',
         'text': '',
