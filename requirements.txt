@@ -23,6 +23,4 @@ omegaconf
 rouge-score
 sentencepiece
 opencv-python
-fastapi==0.88.0
-starlette==0.22.0
 gradio
