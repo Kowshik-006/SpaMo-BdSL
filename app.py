@@ -182,7 +182,7 @@ demo = gr.Interface(
     title="SpaMo-BdSL: বাংলা ইশারা ভাষা অনুবাদ",
     description="বাংলা ইশারা ভাষার ভিডিও আপলোড করুন এবং বাংলা অনুবাদ পান।\n\n"
                 "Upload a Bangla Sign Language video to get the Bangla text translation.",
-    allow_flagging="never",
+    flagging_mode="never",
 )
 
 if __name__ == "__main__":
