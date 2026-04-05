@@ -86,7 +86,7 @@ def get_img_list(ds_name, vid_root, path):
         img_path = os.path.join(vid_root, 'features', 'fullFrame-256x256px', path)
     elif ds_name == 'CSL-Daily':
         img_path = os.path.join(vid_root, 'CSL-Daily_256x256px', path)
-    elif ds_name == 'Banglagov':
+    elif ds_name in ('Banglagov', 'BTVSL'):
         img_path = os.path.join(vid_root, path)
     else:
         raise ValueError(f"Dataset {ds_name} is not supported.")
