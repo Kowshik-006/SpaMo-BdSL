@@ -47,8 +47,19 @@ class TemporalConv(nn.Module):
                 modules.append(nn.ReLU(inplace=True))
         self.temporal_conv = nn.Sequential(*modules)
 
+        self.min_temporal_length = self._compute_min_temporal_length()
+
         if self.num_classes != -1:
             self.fc = nn.Linear(self.hidden_size, self.num_classes)
+
+    def _compute_min_temporal_length(self):
+        min_len = 1
+        for ks in reversed(self.kernel_size):
+            if ks[0] == 'P':
+                min_len = min_len * int(ks[1])
+            elif ks[0] == 'K':
+                min_len = min_len + int(ks[1]) - 1
+        return min_len
 
     def update_lgt(self, lgt):
         feat_len = copy.deepcopy(lgt)
@@ -57,12 +68,14 @@ class TemporalConv(nn.Module):
                 feat_len = torch.div(feat_len, 2)
             else:
                 feat_len -= int(ks[1]) - 1
-                #pass
         return feat_len
 
     def forward(self, frame_feat, lgt):
+        T = frame_feat.shape[2]
+        if T < self.min_temporal_length:
+            frame_feat = F.pad(frame_feat, (0, self.min_temporal_length - T))
         visual_feat = self.temporal_conv(frame_feat)
-        lgt = self.update_lgt(lgt)
+        lgt = self.update_lgt(lgt).clamp(min=1)
         logits = None if self.num_classes == -1 \
             else self.fc(visual_feat.transpose(1, 2)).transpose(1, 2)
         return {
