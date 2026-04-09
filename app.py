@@ -5,6 +5,7 @@ import torch
 import tempfile
 import gradio as gr
 from PIL import Image
+import argparse
 
 sys.path.append(os.path.dirname(__file__))
 
@@ -18,8 +19,23 @@ from utils.helpers import sliding_window_for_list, instantiate_from_config
 # =====================================================================
 # MODIFY THESE THREE VALUES FOR YOUR ML PC
 # =====================================================================
-CKPT_PATH = "logs/2026-03-24T12-21-42_finetune_banglagov/checkpoints/last.ckpt"
-CONFIG_PATH = "configs/finetune_banglagov.yaml"
+
+parser = argparse.ArgumentParser()
+parser.add_argument(
+    "-d","--dataset", 
+    type=str, 
+    choices=["banglagov", "btvsl"], 
+    default="banglagov",
+    help="Select SLT dataset: banglagov or btvsl"
+)
+args, _ = parser.parse_known_args()
+
+if args.dataset == "banglagov":
+    CKPT_PATH = "logs/2026-03-24T12-21-42_finetune_banglagov/checkpoints/last.ckpt"
+    CONFIG_PATH = "configs/finetune_banglagov.yaml"
+else:
+    CKPT_PATH = "logs/2026-04-08T17-46-17_finetune_btvsl/checkpoints/last.ckpt"
+    CONFIG_PATH = "configs/finetune_btvsl.yaml"
 DEVICE = "cuda:0"
 CACHE_DIR = "./hf_cache"       # set to None to use ~/.cache/huggingface
 VIT_BATCH_SIZE = 8
