@@ -86,9 +86,9 @@ data:
       target: dataset.btvsl.BTVSLDataset
       params:
         anno_root: ./preprocess/BTVSL
-        frame_root: /path/to/extracted_frames
-        feat_root: /path/to/preextracted-btvsl/clip-vit-large-patch14_feat_BTVSL
-        mae_feat_root: /path/to/preextracted-btvsl/mae_feat_BTVSL
+        frame_root: /home/mdsr/CSLT-Kowshik-Adiba/BTVSL/frame_root
+        feat_root: /home/mdsr/CSLT-Kowshik-Adiba/SpaMo-BdSL/save/BTVSL/clip-vit-large-patch14_feat_BTVSL
+        mae_feat_root: /home/mdsr/CSLT-Kowshik-Adiba/SpaMo-BdSL/save/BTVSL/mae_feat_BTVSL
         mode: train
         spatial: true
         spatiotemporal: true
@@ -99,9 +99,9 @@ data:
       target: dataset.btvsl.BTVSLDataset
       params:
         anno_root: ./preprocess/BTVSL
-        frame_root: /path/to/extracted_frames
-        feat_root: /path/to/preextracted-btvsl/clip-vit-large-patch14_feat_BTVSL
-        mae_feat_root: /path/to/preextracted-btvsl/mae_feat_BTVSL
+        frame_root: /home/mdsr/CSLT-Kowshik-Adiba/BTVSL/frame_root
+        feat_root: /home/mdsr/CSLT-Kowshik-Adiba/SpaMo-BdSL/save/BTVSL/clip-vit-large-patch14_feat_BTVSL
+        mae_feat_root: /home/mdsr/CSLT-Kowshik-Adiba/SpaMo-BdSL/save/BTVSL/mae_feat_BTVSL
         mode: dev
         spatial: true
         spatiotemporal: true
@@ -112,9 +112,9 @@ data:
       target: dataset.btvsl.BTVSLDataset
       params:
         anno_root: ./preprocess/BTVSL
-        frame_root: /path/to/extracted_frames
-        feat_root: /path/to/preextracted-btvsl/clip-vit-large-patch14_feat_BTVSL
-        mae_feat_root: /path/to/preextracted-btvsl/mae_feat_BTVSL
+        frame_root: /home/mdsr/CSLT-Kowshik-Adiba/BTVSL/frame_root
+        feat_root: /home/mdsr/CSLT-Kowshik-Adiba/SpaMo-BdSL/save/BTVSL/clip-vit-large-patch14_feat_BTVSL
+        mae_feat_root: /home/mdsr/CSLT-Kowshik-Adiba/SpaMo-BdSL/save/BTVSL/mae_feat_BTVSL
         mode: test
         spatial: true
         spatiotemporal: true
