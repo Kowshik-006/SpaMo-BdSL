@@ -1,15 +1,17 @@
-# An Efficient Gloss-Free Sign Language Translation Using Spatial Configurations and Motion Dynamics with LLMs
+# SpaMo-BdSL: Gloss-Free Bangla Sign Language Translation
 
-Official implementation for the NAACL 2025 [paper](https://aclanthology.org/2025.naacl-long.197.pdf): An Efficient Gloss-Free Sign Language Translation Using Spatial Configurations and Motion Dynamics with LLMs
+SpaMo-BdSL adapts the gloss-free **Spa**tial and **Mo**tion-based Sign Language Translation (**SpaMo**) framework ([NAACL 2025](https://aclanthology.org/2025.naacl-long.197.pdf)) to **Bangla Sign Language (BdSL)**. It translates sign language videos directly into Bangla text, without gloss annotations, using the [BanglaGov](https://huggingface.co/datasets/banglagov/Ban-Sign-Sent-9K-V1) dataset.
 
 
 ## Introduction
 
-![model architecture](images/overview.png)
+![model architecture](images/overview-spamo-bdsl.png)
 
-We introduce a novel gloss-free framework, **Spa**tial and **Mo**tion-based Sign Language Translation (**SpaMo**). 
-SpaMo is designed to fully exploit the spatial configurations and motion dynamics in sign videos using off-the-shelf visual encoders, without requiring domain-specific fine-tuning.
-As shown in the figure above, the core idea is simple: We extract spatial features (representing spatial configurations) and motion features (capturing motion dynamics) using two different visual encoders, then feed these into an LLM with a language prompt.
+SpaMo fully exploits the spatial configurations and motion dynamics in sign videos using off-the-shelf, frozen visual encoders, without requiring domain-specific fine-tuning. The core idea is simple: we extract spatial features (spatial configurations) with a CLIP ViT and motion features (motion dynamics) with a VideoMAE, fuse them, and feed them into a language model with a language prompt to generate the target sentence.
+
+SpaMo-BdSL keeps this architecture and runs the BanglaGov dataset through the pipeline. Two text backbones are provided:
+- `csebuetnlp/banglat5` (247M params, Bangla-specific) — config `configs/finetune_banglagov.yaml`
+- `bigscience/mt0-xl` (3.7B params, multilingual) — config `configs/finetune_banglagov_mt0.yaml`
 
 
 ## Environment
@@ -20,87 +22,102 @@ pip install -r requirements.txt
 ```
 
 
-## Data Preparation
+## Dataset
 
-We validate our method on three datasets:
-- [Phoenix-2014T](https://www-i6.informatik.rwth-aachen.de/~koller/RWTH-PHOENIX-2014-T/)
-- [CSL-Daily](http://home.ustc.edu.cn/~zhouh156/dataset/csl-daily/)
-- [How2Sign](https://how2sign.github.io/)
+We use the [BanglaGov](https://huggingface.co/datasets/banglagov/Ban-Sign-Sent-9K-V1) Bangla sign language sentence dataset (1,922 unique sentences, 5 signers each, 9,610 videos). The pipeline below assumes the dataset is stored under a common root (e.g. `Banglagov_Dataset/`) containing `Sign_Videos/` and `Bangla_Sign_Sentence_Mapping.csv`.
 
-### Spatial and Motion Features
+Replace the placeholders below with your own paths:
+- `/PATH/TO/DATASET_ROOT` — root of the BanglaGov dataset (contains `Sign_Videos/` and the mapping CSV).
+- `/PATH/TO/FRAME_ROOT` — where extracted frames are written/read.
+- `/PATH/TO/SAVE_DIR` — where extracted ViT/VideoMAE features are saved.
+- `/PATH/TO/CACHE_DIR` — Hugging Face model cache directory.
 
-SpaMo utilizes two complementary feature types:
-1. **Spatial Features**: Extracted with ViT models to capture static visual information
-2. **Motion Features**: Extracted with VideoMAE models to capture temporal dynamics
 
-#### Extracting Spatial Features
+## Pipeline
 
-To extract spatial features using the CLIP ViT model:
+The full BanglaGov pipeline runs in order. Adjust the paths to match your machine.
+
+### 1. Extract frames from videos
+
+```bash
+python scripts/extract_frames_banglagov.py \
+    --dataset_root /PATH/TO/DATASET_ROOT \
+    --csv_path /PATH/TO/DATASET_ROOT/Bangla_Sign_Sentence_Mapping.csv \
+    --output_dir /PATH/TO/FRAME_ROOT \
+    --resize 256 256
+```
+
+### 2. Preprocess annotations (frames → npy)
+
+```bash
+python scripts/preprocess_banglagov.py \
+    --csv_path /PATH/TO/DATASET_ROOT/Bangla_Sign_Sentence_Mapping.csv \
+    --frame_root /PATH/TO/FRAME_ROOT \
+    --output_dir ./preprocess/Banglagov
+```
+
+### 3. Extract spatial (ViT) features
 
 ```bash
 python scripts/vit_extract_feature.py \
-    --anno_root ./preprocess/Phoenix14T \
-    --model_name openai/clip-vit-large-patch14 \
-    --video_root /PATH/TO/PHOENIX-2014-T-release-v3/PHOENIX-2014-T/ \
-    --cache_dir /PATH/TO/CACHE_DIR \
+    --anno_root ./preprocess/Banglagov \
+    --video_root /PATH/TO/FRAME_ROOT \
     --save_dir /PATH/TO/SAVE_DIR \
-    --s2_mode s2wrapping \
-    --scales 1 2 \
-    --batch_size 32 \
-    --device cuda:0
+    --cache_dir /PATH/TO/CACHE_DIR \
+    --device cuda:0 \
+    --s2_mode s2wrapping --scales 1 2 \
+    --batch_size 8
 ```
 
-Key parameters:
-- `--model_name`: CLIP ViT model variant (default: openai/clip-vit-large-patch14)
-- `--s2_mode`: Use "s2wrapping" for multi-scale feature extraction
-- `--scales`: Scales for multi-scale feature extraction (default: 1 2)
-
-#### Extracting Motion Features
-
-To extract motion features using VideoMAE:
+### 4. Extract motion (VideoMAE) features
 
 ```bash
 python scripts/mae_extract_feature.py \
-    --anno_root ./preprocess/Phoenix14T \
-    --model_name MCG-NJU/videomae-large \
-    --video_root /PATH/TO/PHOENIX-2014-T-release-v3/PHOENIX-2014-T/ \
-    --cache_dir /PATH/TO/CACHE_DIR \
+    --anno_root ./preprocess/Banglagov \
+    --video_root /PATH/TO/FRAME_ROOT \
     --save_dir /PATH/TO/SAVE_DIR \
+    --cache_dir /PATH/TO/CACHE_DIR \
+    --device cuda:0 \
     --overlap_size 8 \
-    --batch_size 32 \
-    --device cuda:0
+    --batch_size 8
 ```
 
-For convenience, you can download our pre-extracted features from [here](https://www.dropbox.com/scl/fo/vgbws4cftewpoc6kudoap/AOtWs7adP4AvK0iT7KkWaJk?rlkey=nf3wp64zenqx3t2z695ndzcy7&st=9ydialet&dl=0).
-
-
-## Model Training and Evaluation
-
-### Training
-
-Train the SpaMo model with:
+### 5. Train
 
 ```bash
-python main.py -c configs/finetune.yaml -e bleu
+python main.py -c configs/finetune_banglagov.yaml -e bleu
 ```
 
-### Evaluation
+Use `configs/finetune_banglagov_mt0.yaml` instead to train with the mT0-XL backbone.
 
-Evaluate a trained model using:
+### 6. Resume training from a checkpoint
 
 ```bash
-python main.py -c configs/finetune.yaml -e bleu --train False --test True --ckpt /PATH/TO/CHECKPOINT
+python main.py -c configs/finetune_banglagov.yaml \
+    -r logs/<RUN_LOG_DIR> \
+    --ckpt last.ckpt -e bleu
 ```
 
-Replace `/PATH/TO/CHECKPOINT` with your model checkpoint path.
-Pre-trained checkpoints are available for download [here](https://www.dropbox.com/scl/fi/c9khflgxgl96lx919p6oq/spamo.ckpt?rlkey=gp3zmk6jwg9cnf3e2hpw268ih&st=u103orvs&dl=0).
+### 7. Test
+
+```bash
+python main.py -c configs/finetune_banglagov.yaml -e bleu \
+    --train False --test True \
+    --ckpt logs/<RUN_LOG_DIR>/checkpoints/last.ckpt
+```
+
+
+## Notes
+
+- The visual encoders (CLIP ViT-L/14 and VideoMAE-L/16) are **frozen**; features are extracted once (steps 3–4) and reused during training.
+- The feature-extraction and training settings above are tuned to fit a single consumer-grade GPU (e.g. smaller batch sizes and frame caps). See `configs/finetune_banglagov.yaml` for the full configuration.
 
 
 ## Citation
 
-Please cite our works if you find this repo is helpful.
+This work builds on the original SpaMo framework. Please cite it if you find this repo helpful:
 
-```bash
+```bibtex
 @inproceedings{hwang2025efficient,
   title={An Efficient Sign Language Translation Using Spatial Configuration and Motion Dynamics with LLMs},
   author={Hwang, Eui Jun and Cho, Sukmin and Lee, Junmyeong and Park, Jong C},
