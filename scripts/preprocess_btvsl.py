@@ -87,23 +87,23 @@ def main():
 
     print(f"Total valid samples: {len(all_samples)}")
 
-    unique_video_names = sorted(set(s['video_name'] for s in all_samples))
-    print(f"Unique source videos: {len(unique_video_names)}")
+    unique_sentence_ids = sorted(set(s['sentence_id'] for s in all_samples))
+    print(f"Unique sentences: {len(unique_sentence_ids)}")
 
     random.seed(args.seed)
-    random.shuffle(unique_video_names)
+    random.shuffle(unique_sentence_ids)
 
-    n_train = int(len(unique_video_names) * args.train_ratio)
-    n_dev = int(len(unique_video_names) * args.dev_ratio)
+    n_train = int(len(unique_sentence_ids) * args.train_ratio)
+    n_dev = int(len(unique_sentence_ids) * args.dev_ratio)
 
-    train_vids = set(unique_video_names[:n_train])
-    dev_vids = set(unique_video_names[n_train:n_train + n_dev])
-    test_vids = set(unique_video_names[n_train + n_dev:])
+    train_ids = set(unique_sentence_ids[:n_train])
+    dev_ids = set(unique_sentence_ids[n_train:n_train + n_dev])
+    test_ids = set(unique_sentence_ids[n_train + n_dev:])
 
     splits = {
-        'train': [s for s in all_samples if s['video_name'] in train_vids],
-        'dev': [s for s in all_samples if s['video_name'] in dev_vids],
-        'test': [s for s in all_samples if s['video_name'] in test_vids],
+        'train': [s for s in all_samples if s['sentence_id'] in train_ids],
+        'dev': [s for s in all_samples if s['sentence_id'] in dev_ids],
+        'test': [s for s in all_samples if s['sentence_id'] in test_ids],
     }
 
     for split_name, samples in splits.items():
@@ -114,8 +114,8 @@ def main():
         np.save(os.path.join(args.output_dir, f'{split_name}_info.npy'), data)
         np.save(os.path.join(args.output_dir, f'{split_name}_info_ml.npy'), data)
 
-        n_vids = len(set(s['video_name'] for s in samples))
-        print(f"  {split_name}: {len(samples)} samples ({n_vids} source videos)")
+        n_ids = len(set(s['sentence_id'] for s in samples))
+        print(f"  {split_name}: {len(samples)} samples ({n_ids} sentences)")
 
     print(f"\nAnnotation files saved to {args.output_dir}")
 
