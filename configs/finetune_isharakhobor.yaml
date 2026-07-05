@@ -47,7 +47,7 @@ model:
     inter_hidden: 768
     input_size: 2048
     beam_size: 5
-    max_frame_len: 128
+    max_frame_len: 256
     max_txt_len: 64
     frame_sample_rate: 1
     prompt: "ইশারা ভাষা থেকে বাংলায় অনুবাদ করুন:"
