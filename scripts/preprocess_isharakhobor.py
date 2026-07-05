@@ -62,12 +62,12 @@ def main():
 
         split_name = SPLIT_MAP.get(split_raw)
         if split_name is None:
-            print(f"Warning: Unknown split '{split_raw}' for {video_id}, skipping")
+            print(f"Warning: Unknown split '{split_raw}' for {sentence_id}, skipping")
             unknown_split += 1
             continue
 
         # Frames are stored in a folder named after the clip's video-id
-        frames_path = os.path.join(args.frame_root, video_id)
+        frames_path = os.path.join(args.frame_root, sentence_id)
         if not os.path.isdir(frames_path):
             missing += 1
             continue
@@ -83,8 +83,8 @@ def main():
             continue
 
         splits[split_name].append({
-            'fileid': video_id,
-            'folder': os.path.join(video_id, '*.png'),
+            'fileid': sentence_id,
+            'folder': os.path.join(sentence_id, '*.png'),
             'text': sentence,
             'gloss': '',
             'sentence_id': sentence_id,
