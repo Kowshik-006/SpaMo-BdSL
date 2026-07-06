@@ -111,7 +111,7 @@ def get_iterator(args, mode, item_save_dir):
     
     data = np.load(os.path.join(args.anno_root, f'{mode}_info.npy'), allow_pickle=True).item()
     ds_name = osp.split(args.anno_root)[-1]
-    num = len(data) if ds_name in ('Banglagov', 'BTVSL') else len(data) - 1
+    num = len(data) if ds_name in ('Banglagov', 'BTVSL', 'isharakhobor') else len(data) - 1
     reader = ViTFeatureReader(
         args.model_name, 
         device=args.device, 
@@ -133,7 +133,7 @@ def get_iterator(args, mode, item_save_dir):
 
             fname = data[i]['folder']
             
-            if ds_name in ('Phoenix14T', 'CSL-Daily', 'Banglagov', 'BTVSL'):
+            if ds_name in ('Phoenix14T', 'CSL-Daily', 'Banglagov', 'BTVSL', 'isharakhobor'):
                 image_list = get_img_list(ds_name, args.video_root, fname)
                 videos = [Image.open(image).convert('RGB') for image in image_list]
                 

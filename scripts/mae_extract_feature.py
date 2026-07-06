@@ -114,7 +114,7 @@ def get_iterator(args, mode, item_save_dir):
 
             fname = data[i]['folder']
             
-            if ds_name in ('Phoenix14T', 'CSL-Daily', 'Banglagov', 'BTVSL'):
+            if ds_name in ('Phoenix14T', 'CSL-Daily', 'Banglagov', 'BTVSL', 'isharakhobor'):
                 image_list = get_img_list(ds_name, args.video_root, fname)
                 
                 if len(image_list) < 16:
