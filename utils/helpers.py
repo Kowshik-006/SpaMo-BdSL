@@ -4,6 +4,10 @@ import random
 import os
 import glob
 
+import av
+
+VIDEO_EXTENSIONS = ('.mp4', '.avi', '.mov', '.mkv', '.wmv', '.flv', '.webm')
+
 
 # def derangement(lst):
 #     assert len(lst) > 1, "List must have at least two elements."
@@ -133,6 +137,73 @@ def read_video(fname, start_time=None, end_time=None):
     except Exception as e:
         print(e)
         return []
+
+
+def build_isharakhobor_video_index(clips_dir):
+    """Map video stems (filename without extension) to paths relative to clips_dir."""
+    index = {}
+    for subdir in sorted(os.listdir(clips_dir)):
+        subdir_path = os.path.join(clips_dir, subdir)
+        if not os.path.isdir(subdir_path):
+            continue
+        for video_file in sorted(os.listdir(subdir_path)):
+            if not video_file.lower().endswith(VIDEO_EXTENSIONS):
+                continue
+            stem = os.path.splitext(video_file)[0]
+            rel_path = os.path.join(subdir, video_file)
+            index[stem] = rel_path
+    return index
+
+
+def resolve_isharakhobor_video(video_index, video_id, sentence_id):
+    """
+    Resolve a CSV row to a clip path and whether start/end timestamps apply.
+
+    Pre-cut sentence clips are named after sentence_id; full source videos use
+    video_id with temporal bounds from the CSV.
+    """
+    if sentence_id in video_index:
+        return video_index[sentence_id], False
+    if video_id in video_index:
+        return video_index[video_id], True
+    return None, None
+
+
+def count_video_frames(video_path, start_time=None, end_time=None, use_time_bounds=False):
+    """Count frames in a video, optionally within a time range."""
+    if use_time_bounds and start_time is not None and end_time is not None:
+        return len(read_video(video_path, start_time=float(start_time), end_time=float(end_time)))
+
+    import cv2
+
+    cap = cv2.VideoCapture(str(video_path))
+    if not cap.isOpened():
+        return 0
+    count = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+    cap.release()
+    return count
+
+
+def read_isharakhobor_video(video_root, data_item, resize=None):
+    """Load PIL frames for an isharakhobor annotation entry stored as video."""
+    video_path = os.path.join(video_root, data_item['folder'])
+    use_time_bounds = data_item.get('use_time_bounds', False)
+
+    if use_time_bounds:
+        start_time = data_item.get('start_time')
+        end_time = data_item.get('end_time')
+        frames = read_video(
+            video_path,
+            start_time=float(start_time) if start_time not in (None, '') else None,
+            end_time=float(end_time) if end_time not in (None, '') else None,
+        )
+    else:
+        frames = read_video(video_path)
+
+    if resize is not None:
+        resize = tuple(resize)
+        frames = [frame.resize(resize) for frame in frames]
+    return frames
 
 
 def sliding_window_for_list(data_list, window_size, overlap_size):
