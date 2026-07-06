@@ -11,6 +11,14 @@ import sys
 sys.path.append('./')
 
 from utils.helpers import sliding_window_for_list, read_video, get_img_list
+from utils.feature_extract_resume import (
+    save_features_atomic,
+    is_feature_done,
+    cleanup_stale_temp_files,
+    count_completed,
+    build_output_paths,
+    handle_keyboard_interrupt,
+)
 
 _GLOBAL_SEED = 0
 np.random.seed(_GLOBAL_SEED)
@@ -58,15 +66,33 @@ def get_parser():
     parser.add_argument('--mode', nargs='+', type=str)
     parser.add_argument('--nth_layer', type=int, default=-1)
     parser.add_argument('--cache_dir', help='cache dir for model', default=None)
+    parser.add_argument(
+        '--force',
+        action='store_true',
+        help='Re-extract features even when output files already exist',
+    )
     return parser
 
 
-def get_iterator(args, mode):
+def build_mae_postfix(args, st):
+    postfix = f'_overlap-{args.overlap_size}'
+    if st is not None:
+        postfix = f'_{st}{postfix}'
+    return postfix
+
+
+def get_start_time(data_item, ds_name):
+    if ds_name == 'How2Sign':
+        return str(data_item['original_info']['START_REALIGNED'])
+    return None
+
+
+def get_iterator(args, mode, item_save_dir):
     batch_size = args.batch_size
 
     data = np.load(os.path.join(args.anno_root, f'{mode}_info.npy'), allow_pickle=True).item()
     ds_name = osp.split(args.anno_root)[-1]
-    num = len(data) if ds_name in ('Banglagov', 'BTVSL', 'isharakhobor') else len(data) - 1
+    num = len(data) if ds_name in ('Banglagov', 'BTVSL') else len(data) - 1
 
     reader = VideoMAEFeatureReader(
         args.model_name, 
@@ -78,9 +104,17 @@ def get_iterator(args, mode):
     
     def iterate():
         for i in range(num):
+            st = get_start_time(data[i], ds_name)
+            output_path = osp.join(
+                item_save_dir,
+                f"{data[i]['fileid']}{build_mae_postfix(args, st)}.npy",
+            )
+            if not args.force and is_feature_done(output_path):
+                continue
+
             fname = data[i]['folder']
             
-            if ds_name in ('Phoenix14T', 'CSL-Daily', 'Banglagov', 'BTVSL', 'isharakhobor'):
+            if ds_name in ('Phoenix14T', 'CSL-Daily', 'Banglagov', 'BTVSL'):
                 image_list = get_img_list(ds_name, args.video_root, fname)
                 
                 if len(image_list) < 16:
@@ -98,7 +132,7 @@ def get_iterator(args, mode):
                     feats = reader.get_feats(video_batch).cpu().numpy()
                     video_feats.append(feats)
                     
-                yield np.concatenate(video_feats, axis=0), data[i]['fileid'], None
+                yield np.concatenate(video_feats, axis=0), data[i]['fileid'], st, output_path
             
             else:
                 if ds_name == 'How2Sign':
@@ -118,43 +152,53 @@ def get_iterator(args, mode):
                             feats = reader.get_feats(video_batch).cpu().numpy()
                             video_feats.append(feats)
                         
-                        yield np.concatenate(video_feats, axis=0), data[i]['fileid'], str(start_time)
+                        yield np.concatenate(video_feats, axis=0), data[i]['fileid'], st, output_path
                     
                     else:
-                        yield [], data[i]['fileid'], str(start_time)
+                        yield [], data[i]['fileid'], st, output_path
     
-    return iterate, num
+    return iterate, num, data
 
 def main():
     parser = get_parser()
     args = parser.parse_args()
 
     mode = ["dev", "test", "train"]
-    for m in mode:
-        ds_name = osp.split(args.anno_root)[-1]
-        fname = f'mae_feat_{ds_name}'
-        os.makedirs(osp.join(args.save_dir, fname, m), exist_ok=True)
+    try:
+        for m in mode:
+            ds_name = osp.split(args.anno_root)[-1]
+            fname = f'mae_feat_{ds_name}'
+            item_save_dir = osp.join(args.save_dir, fname, m)
+            os.makedirs(item_save_dir, exist_ok=True)
+            cleanup_stale_temp_files(item_save_dir)
     
-        if ds_name == 'How2Sign':
-            if m == 'dev': _m = 'val'
-            else: _m = m
-        elif ds_name == 'NIASL2021':
-            if m == 'dev': _m = 'validation' 
-        else:
-            _m = m
+            if ds_name == 'How2Sign':
+                if m == 'dev': _m = 'val'
+                else: _m = m
+            elif ds_name == 'NIASL2021':
+                if m == 'dev': _m = 'validation' 
+            else:
+                _m = m
 
-        generator, num = get_iterator(args, _m)
-        iterator = generator()
+            generator, num, data = get_iterator(args, _m, item_save_dir)
+            output_paths = build_output_paths(
+                item_save_dir,
+                data,
+                num,
+                lambda item: build_mae_postfix(args, get_start_time(item, ds_name)),
+            )
+            done = count_completed(output_paths)
+            remaining = num - done
+            if done and not args.force:
+                print(f"[{m}] Resuming: {done}/{num} complete, {remaining} remaining.")
 
-        for vit_feat in tqdm.tqdm(iterator, total=num):
-            feats, id, st = vit_feat
-            save_path = osp.join(args.save_dir, fname, m)
-            postfix = f'_overlap-{args.overlap_size}'
-            
-            if st is not None:
-                postfix = f'_{st}{postfix}'
-            
-            np.save(osp.join(save_path, f'{id}{postfix}.npy'), feats)
+            iterator = generator()
+            progress = tqdm.tqdm(iterator, total=remaining if not args.force else num)
+            for mae_feat in progress:
+                feats, _id, _st, output_path = mae_feat
+                save_features_atomic(output_path, feats)
+    except KeyboardInterrupt:
+        handle_keyboard_interrupt()
 
 
 if __name__ == "__main__":
