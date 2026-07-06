@@ -4,8 +4,17 @@ import cv2
 import argparse
 from tqdm import tqdm
 
+WEBP_QUALITY = 95
 
-def extract_frames_from_segment(video_path, start_time, end_time, output_dir, resize=None):
+
+def save_frame(frame, frame_path, fmt='png'):
+    if fmt == 'webp':
+        cv2.imwrite(frame_path, frame, [cv2.IMWRITE_WEBP_QUALITY, WEBP_QUALITY])
+    else:
+        cv2.imwrite(frame_path, frame)
+
+
+def extract_frames_from_segment(video_path, start_time, end_time, output_dir, resize=None, fmt='png'):
     """Extract frames from a specific time segment of a video file."""
     os.makedirs(output_dir, exist_ok=True)
     cap = cv2.VideoCapture(str(video_path))
@@ -33,8 +42,8 @@ def extract_frames_from_segment(video_path, start_time, end_time, output_dir, re
             break
         if resize:
             frame = cv2.resize(frame, resize)
-        frame_path = os.path.join(output_dir, f"frame_{frame_idx:04d}.png")
-        cv2.imwrite(frame_path, frame)
+        frame_path = os.path.join(output_dir, f"frame_{frame_idx:04d}.{fmt}")
+        save_frame(frame, frame_path, fmt)
         frame_idx += 1
         current_frame += 1
 
@@ -61,6 +70,10 @@ def get_parser():
     parser.add_argument(
         '--resize', type=int, nargs=2, default=None,
         help='Resize frames to W H (e.g., --resize 256 256)'
+    )
+    parser.add_argument(
+        '--format', choices=['png', 'webp'], default='png',
+        help='Image format for extracted frames (default: png)'
     )
     return parser
 
@@ -102,7 +115,8 @@ def main():
             continue
 
         n_frames = extract_frames_from_segment(
-            video_path, start_time, end_time, output_subdir, resize=resize
+            video_path, start_time, end_time, output_subdir,
+            resize=resize, fmt=args.format,
         )
 
         if n_frames == 0:

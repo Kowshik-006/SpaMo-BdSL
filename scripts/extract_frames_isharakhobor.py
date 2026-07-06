@@ -3,9 +3,18 @@ import cv2
 import argparse
 from tqdm import tqdm
 
+WEBP_QUALITY = 95
 
-def extract_frames(video_path, output_dir, resize=None):
-    """Extract all frames from a video file and save as PNGs."""
+
+def save_frame(frame, frame_path, fmt='png'):
+    if fmt == 'webp':
+        cv2.imwrite(frame_path, frame, [cv2.IMWRITE_WEBP_QUALITY, WEBP_QUALITY])
+    else:
+        cv2.imwrite(frame_path, frame)
+
+
+def extract_frames(video_path, output_dir, resize=None, fmt='png'):
+    """Extract all frames from a video file and save as images."""
     os.makedirs(output_dir, exist_ok=True)
     cap = cv2.VideoCapture(str(video_path))
 
@@ -20,8 +29,8 @@ def extract_frames(video_path, output_dir, resize=None):
             break
         if resize:
             frame = cv2.resize(frame, resize)
-        frame_path = os.path.join(output_dir, f"frame_{frame_idx:04d}.png")
-        cv2.imwrite(frame_path, frame)
+        frame_path = os.path.join(output_dir, f"frame_{frame_idx:04d}.{fmt}")
+        save_frame(frame, frame_path, fmt)
         frame_idx += 1
 
     cap.release()
@@ -43,6 +52,10 @@ def get_parser():
     parser.add_argument(
         '--resize', type=int, nargs=2, default=None,
         help='Resize frames to W H (e.g., --resize 256 256)'
+    )
+    parser.add_argument(
+        '--format', choices=['png', 'webp'], default='png',
+        help='Image format for extracted frames (default: png)'
     )
     return parser
 
@@ -80,7 +93,9 @@ def main():
         if os.path.exists(output_subdir) and len(os.listdir(output_subdir)) > 0:
             continue
 
-        n_frames = extract_frames(video_path, output_subdir, resize=resize)
+        n_frames = extract_frames(
+            video_path, output_subdir, resize=resize, fmt=args.format
+        )
 
         if n_frames == 0:
             print(f"Warning: No frames extracted for {video_path}")

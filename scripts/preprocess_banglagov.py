@@ -25,6 +25,10 @@ def get_parser():
     parser.add_argument('--dev_ratio', type=float, default=0.1)
     parser.add_argument('--test_ratio', type=float, default=0.1)
     parser.add_argument('--seed', type=int, default=42)
+    parser.add_argument(
+        '--format', choices=['png', 'webp'], default='png',
+        help='Image format of extracted frames (default: png)'
+    )
     return parser
 
 
@@ -36,6 +40,7 @@ def main():
         "Split ratios must sum to 1.0"
 
     os.makedirs(args.output_dir, exist_ok=True)
+    ext = f'.{args.format}'
 
     sentences = []
     with open(args.csv_path, 'r', encoding='utf-8') as f:
@@ -61,7 +66,7 @@ def main():
             frames_path = os.path.join(args.frame_root, signer_dir)
             n_frames = len([
                 f for f in os.listdir(frames_path)
-                if f.endswith('.png')
+                if f.endswith(ext)
             ])
 
             if n_frames == 0:
@@ -70,7 +75,7 @@ def main():
 
             all_samples.append({
                 'fileid': signer_dir,
-                'folder': os.path.join(signer_dir, '*.png'),
+                'folder': os.path.join(signer_dir, f'*.{args.format}'),
                 'text': sent['text'],
                 'gloss': sent['gloss'],
                 'sentence_id': sid,

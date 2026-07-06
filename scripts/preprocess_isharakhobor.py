@@ -31,6 +31,10 @@ def get_parser():
         '--output_dir', required=True,
         help='Output directory for annotation npy files'
     )
+    parser.add_argument(
+        '--format', choices=['png', 'webp'], default='png',
+        help='Image format of extracted frames (default: png)'
+    )
     return parser
 
 
@@ -39,6 +43,7 @@ def main():
     args = parser.parse_args()
 
     os.makedirs(args.output_dir, exist_ok=True)
+    ext = f'.{args.format}'
 
     rows = []
     with open(args.csv_path, 'r', encoding='utf-8') as f:
@@ -74,7 +79,7 @@ def main():
 
         n_frames = len([
             f for f in os.listdir(frames_path)
-            if f.endswith('.png')
+            if f.endswith(ext)
         ])
 
         if n_frames == 0:
@@ -84,7 +89,7 @@ def main():
 
         splits[split_name].append({
             'fileid': sentence_id,
-            'folder': os.path.join(sentence_id, '*.png'),
+            'folder': os.path.join(sentence_id, f'*.{args.format}'),
             'text': sentence,
             'gloss': '',
             'sentence_id': sentence_id,
