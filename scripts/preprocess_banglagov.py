@@ -5,6 +5,9 @@ import numpy as np
 import argparse
 
 
+VALID_SPLITS = {'train', 'dev', 'test'}
+
+
 def get_parser():
     parser = argparse.ArgumentParser(
         description="Preprocess Banglagov dataset: CSV -> annotation npy files"
@@ -29,6 +32,11 @@ def get_parser():
         '--format', choices=['png', 'webp'], default='png',
         help='Image format of extracted frames (default: png)'
     )
+    parser.add_argument(
+        '--split', type=str, default=None,
+        help='CSV header name containing split labels (train/dev/test). '
+             'If not set, random splitting is used.'
+    )
     return parser
 
 
@@ -45,11 +53,25 @@ def main():
     sentences = []
     with open(args.csv_path, 'r', encoding='utf-8-sig') as f:
         reader = csv.DictReader(f)
+        if args.split is not None and args.split not in (reader.fieldnames or []):
+            parser.error(
+                f"Split header '{args.split}' does not exist in CSV. Aborting."
+            )
         for row in reader:
+            split_name = None
+            if args.split is not None:
+                split_raw = row[args.split].strip().lower()
+                if split_raw not in VALID_SPLITS:
+                    parser.error(
+                        f"Invalid split value '{split_raw}' in column '{args.split}'. "
+                        "Allowed values are: train, dev, test."
+                    )
+                split_name = split_raw
             sentences.append({
                 'sentence_id': str(row['Sentence ID']).strip(),
                 'text': row['Natural Sentence'].strip(),
                 'gloss': row['Sign Sentence'].strip(),
+                'split': split_name,
             })
 
     print(f"Loaded {len(sentences)} sentences from CSV")
@@ -80,28 +102,34 @@ def main():
                 'gloss': sent['gloss'],
                 'sentence_id': sid,
                 'num_frames': n_frames,
+                'split': sent['split'],
             })
 
     print(f"Total samples (sentence x signer): {len(all_samples)}")
 
-    unique_sids = sorted(set(s['sentence_id'] for s in all_samples))
-    print(f"Unique sentences: {len(unique_sids)}")
+    splits = {'train': [], 'dev': [], 'test': []}
+    if args.split is None:
+        unique_sids = sorted(set(s['sentence_id'] for s in all_samples))
+        print(f"Unique sentences: {len(unique_sids)}")
 
-    random.seed(args.seed)
-    random.shuffle(unique_sids)
+        random.seed(args.seed)
+        random.shuffle(unique_sids)
 
-    n_train = int(len(unique_sids) * args.train_ratio)
-    n_dev = int(len(unique_sids) * args.dev_ratio)
+        n_train = int(len(unique_sids) * args.train_ratio)
+        n_dev = int(len(unique_sids) * args.dev_ratio)
 
-    train_sids = set(unique_sids[:n_train])
-    dev_sids = set(unique_sids[n_train:n_train + n_dev])
-    test_sids = set(unique_sids[n_train + n_dev:])
+        train_sids = set(unique_sids[:n_train])
+        dev_sids = set(unique_sids[n_train:n_train + n_dev])
+        test_sids = set(unique_sids[n_train + n_dev:])
 
-    splits = {
-        'train': [s for s in all_samples if s['sentence_id'] in train_sids],
-        'dev': [s for s in all_samples if s['sentence_id'] in dev_sids],
-        'test': [s for s in all_samples if s['sentence_id'] in test_sids],
-    }
+        splits = {
+            'train': [s for s in all_samples if s['sentence_id'] in train_sids],
+            'dev': [s for s in all_samples if s['sentence_id'] in dev_sids],
+            'test': [s for s in all_samples if s['sentence_id'] in test_sids],
+        }
+    else:
+        for sample in all_samples:
+            splits[sample['split']].append(sample)
 
     for split_name, samples in splits.items():
         data = {}

@@ -5,6 +5,9 @@ import numpy as np
 import argparse
 
 
+VALID_SPLITS = {'train', 'dev', 'test'}
+
+
 def get_parser():
     parser = argparse.ArgumentParser(
         description="Preprocess BTVSL dataset: CSV -> annotation npy files"
@@ -29,6 +32,11 @@ def get_parser():
         '--format', choices=['png', 'webp'], default='png',
         help='Image format of extracted frames (default: png)'
     )
+    parser.add_argument(
+        '--split', type=str, default=None,
+        help='CSV header name containing split labels (train/dev/test). '
+             'If not set, random splitting is used.'
+    )
     return parser
 
 
@@ -45,6 +53,10 @@ def main():
     rows = []
     with open(args.csv_path, 'r', encoding='utf-8-sig') as f:
         reader = csv.DictReader(f)
+        if args.split is not None and args.split not in (reader.fieldnames or []):
+            parser.error(
+                f"Split header '{args.split}' does not exist in CSV. Aborting."
+            )
         for row in reader:
             rows.append(row)
 
@@ -59,6 +71,15 @@ def main():
         sentence = row['sentence'].strip()
         start_time = row['start_time'].strip()
         end_time = row['end_time'].strip()
+        split_name = None
+        if args.split is not None:
+            split_raw = row[args.split].strip().lower()
+            if split_raw not in VALID_SPLITS:
+                parser.error(
+                    f"Invalid split value '{split_raw}' in column '{args.split}'. "
+                    "Allowed values are: train, dev, test."
+                )
+            split_name = split_raw
 
         frames_path = os.path.join(args.frame_root, sentence_id)
         if not os.path.isdir(frames_path):
@@ -85,6 +106,7 @@ def main():
             'start_time': start_time,
             'end_time': end_time,
             'num_frames': n_frames,
+            'split': split_name,
         })
 
     if missing > 0:
@@ -92,24 +114,29 @@ def main():
 
     print(f"Total valid samples: {len(all_samples)}")
 
-    unique_video_names = sorted(set(s['video_name'] for s in all_samples))
-    print(f"Unique source videos: {len(unique_video_names)}")
+    splits = {'train': [], 'dev': [], 'test': []}
+    if args.split is None:
+        unique_video_names = sorted(set(s['video_name'] for s in all_samples))
+        print(f"Unique source videos: {len(unique_video_names)}")
 
-    random.seed(args.seed)
-    random.shuffle(unique_video_names)
+        random.seed(args.seed)
+        random.shuffle(unique_video_names)
 
-    n_train = int(len(unique_video_names) * args.train_ratio)
-    n_dev = int(len(unique_video_names) * args.dev_ratio)
+        n_train = int(len(unique_video_names) * args.train_ratio)
+        n_dev = int(len(unique_video_names) * args.dev_ratio)
 
-    train_vids = set(unique_video_names[:n_train])
-    dev_vids = set(unique_video_names[n_train:n_train + n_dev])
-    test_vids = set(unique_video_names[n_train + n_dev:])
+        train_vids = set(unique_video_names[:n_train])
+        dev_vids = set(unique_video_names[n_train:n_train + n_dev])
+        test_vids = set(unique_video_names[n_train + n_dev:])
 
-    splits = {
-        'train': [s for s in all_samples if s['video_name'] in train_vids],
-        'dev': [s for s in all_samples if s['video_name'] in dev_vids],
-        'test': [s for s in all_samples if s['video_name'] in test_vids],
-    }
+        splits = {
+            'train': [s for s in all_samples if s['video_name'] in train_vids],
+            'dev': [s for s in all_samples if s['video_name'] in dev_vids],
+            'test': [s for s in all_samples if s['video_name'] in test_vids],
+        }
+    else:
+        for sample in all_samples:
+            splits[sample['split']].append(sample)
 
     for split_name, samples in splits.items():
         data = {}
