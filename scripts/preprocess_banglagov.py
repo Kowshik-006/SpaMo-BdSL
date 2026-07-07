@@ -43,7 +43,7 @@ def main():
     ext = f'.{args.format}'
 
     sentences = []
-    with open(args.csv_path, 'r', encoding='utf-8') as f:
+    with open(args.csv_path, 'r', encoding='utf-8-sig') as f:
         reader = csv.DictReader(f)
         for row in reader:
             sentences.append({

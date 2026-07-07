@@ -70,7 +70,7 @@ def main():
     args = parser.parse_args()
 
     sentence_ids = []
-    with open(args.csv_path, 'r', encoding='utf-8') as f:
+    with open(args.csv_path, 'r', encoding='utf-8-sig') as f:
         reader = csv.DictReader(f)
         for row in reader:
             sentence_ids.append(str(row['Sentence ID']).strip())
