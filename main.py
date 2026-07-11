@@ -314,18 +314,26 @@ def main():
         )
     trainer_config["precision"] = resolved_precision
 
+    # Optional DDP tuning key (not a real Trainer arg): pop before building the Namespace.
+    # Defaults to True because with warm-up steps only the contrastive branch runs on the
+    # first step, leaving the LoRA/decoder params without gradients (DDP would otherwise error).
+    # Set it to False in the config when every step uses all parameters (e.g. warm_up_steps: null)
+    # to avoid the per-iteration autograd traversal overhead.
+    find_unused_parameters = trainer_config.pop("find_unused_parameters", True)
+
     trainer_opt = argparse.Namespace(**trainer_config)
     lightning_config.trainer = trainer_config
 
-    # Multi-GPU: use DDP with find_unused_parameters=True. It is required here
-    # because during warm-up steps only the contrastive branch runs, leaving the
-    # LoRA/decoder parameters without gradients for that step.
+    # Multi-GPU: use DDP.
     devices = trainer_config.get("devices", 1)
     strategy = trainer_config.get("strategy", None)
     if strategy is None and isinstance(devices, int) and devices > 1:
         from pytorch_lightning.strategies import DDPStrategy
-        trainer_opt.strategy = DDPStrategy(find_unused_parameters=True)
-        print(f"Using DDP across {devices} GPUs (find_unused_parameters=True).")
+        trainer_opt.strategy = DDPStrategy(find_unused_parameters=find_unused_parameters)
+        print(
+            f"Using DDP across {devices} GPUs "
+            f"(find_unused_parameters={find_unused_parameters})."
+        )
     
     # Instantiate data module
     data = instantiate_from_config(config.data)
