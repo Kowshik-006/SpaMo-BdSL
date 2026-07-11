@@ -18,6 +18,7 @@ from utils.evaluate import evaluate_results
 from spamo.clip_loss import clip_loss
 from spamo.asb import AbstractSLT
 from transformers import get_cosine_schedule_with_warmup
+from utils.gpu_utils import get_model_dtype
 
 
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
@@ -110,11 +111,13 @@ class BanglaT5SLT(AbstractSLT):
         self.references = []
 
     def prepare_models(self, t5_model: str) -> None:
+        model_dtype = get_model_dtype()
         self.t5_model = AutoModelForSeq2SeqLM.from_pretrained(
             t5_model,
             cache_dir=self.cache_dir,
-            torch_dtype=torch.bfloat16,
+            torch_dtype=model_dtype,
         )
+        print(f"Loaded BanglaT5 backbone with dtype={model_dtype}.")
 
         self.t5_tokenizer = AutoTokenizer.from_pretrained(
             t5_model,

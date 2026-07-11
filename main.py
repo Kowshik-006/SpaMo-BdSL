@@ -13,6 +13,7 @@ from pytorch_lightning.callbacks import EarlyStopping, ModelCheckpoint
 from pytorch_lightning.trainer import Trainer
 
 from utils.helpers import instantiate_from_config
+from utils.gpu_utils import describe_gpu, get_trainer_precision, is_kaggle
 from spamo.callbacks import SetupCallback
 
 
@@ -92,6 +93,11 @@ def get_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         '-e', '--evaluation', type=str, default='mse',
         help='Evaluation metric to use'
+    )
+    parser.add_argument(
+        '--logger', type=str, default=None,
+        choices=['wandb', 'tensorboard', 'testtube'],
+        help='Logger backend. Defaults to tensorboard on Kaggle, wandb otherwise.'
     )
     return parser
 
@@ -266,6 +272,8 @@ def main():
     # Parse arguments
     parser = get_parser()
     opt, _ = parser.parse_known_args()
+
+    print(f"Compute: {describe_gpu()}")
     
     # Validate arguments
     if opt.name and opt.resume:
@@ -295,8 +303,29 @@ def main():
     trainer_config = lightning_config.get("trainer", OmegaConf.create())
     if opt.fast_dev_run:
         trainer_config["fast_dev_run"] = True
+
+    # Downgrade bf16 -> fp16 on GPUs without native bf16 support (e.g. T4)
+    config_precision = trainer_config.get("precision", 32)
+    resolved_precision = get_trainer_precision(config_precision)
+    if resolved_precision != config_precision:
+        print(
+            f"Adjusting precision {config_precision} -> {resolved_precision} "
+            f"(GPU lacks native bf16 support)."
+        )
+    trainer_config["precision"] = resolved_precision
+
     trainer_opt = argparse.Namespace(**trainer_config)
     lightning_config.trainer = trainer_config
+
+    # Multi-GPU: use DDP with find_unused_parameters=True. It is required here
+    # because during warm-up steps only the contrastive branch runs, leaving the
+    # LoRA/decoder parameters without gradients for that step.
+    devices = trainer_config.get("devices", 1)
+    strategy = trainer_config.get("strategy", None)
+    if strategy is None and isinstance(devices, int) and devices > 1:
+        from pytorch_lightning.strategies import DDPStrategy
+        trainer_opt.strategy = DDPStrategy(find_unused_parameters=True)
+        print(f"Using DDP across {devices} GPUs (find_unused_parameters=True).")
     
     # Instantiate data module
     data = instantiate_from_config(config.data)
@@ -307,7 +336,8 @@ def main():
     
     # Configure trainer with callbacks and logger for non-dev runs
     if not opt.fast_dev_run:
-        logger_cfg = configure_logger("wandb", logdir, nowname)
+        logger_type = opt.logger or ("tensorboard" if is_kaggle() else "wandb")
+        logger_cfg = configure_logger(logger_type, logdir, nowname)
         trainer_opt.logger = instantiate_from_config(logger_cfg)
         
         trainer_opt.callbacks = configure_callbacks(
