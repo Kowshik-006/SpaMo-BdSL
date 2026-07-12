@@ -274,6 +274,14 @@ def main():
     opt, _ = parser.parse_known_args()
 
     print(f"Compute: {describe_gpu()}")
+
+    # Optional hang tracer: if SPAMO_DEBUG_HANG is set (seconds), dump all thread stacks
+    # periodically. If training freezes, the last dump shows exactly where it is stuck.
+    debug_hang = os.environ.get("SPAMO_DEBUG_HANG")
+    if debug_hang:
+        import faulthandler
+        faulthandler.dump_traceback_later(int(debug_hang), repeat=True)
+        print(f"Hang tracer enabled: dumping stacks every {debug_hang}s if blocked.")
     
     # Validate arguments
     if opt.name and opt.resume:

@@ -271,11 +271,15 @@ class BanglaT5SLT(AbstractSLT):
 
                 if sample['glor_value'] is not None:
                     if isinstance(sample['glor_value'], list):
-                        glor_values.append(torch.cat(sample['glor_value'], dim=0))
-                        glor_lengths.append(sum(len(g) for g in sample['glor_value']))
+                        glor = torch.cat(sample['glor_value'], dim=0)
                     else:
-                        glor_values.append(sample['glor_value'])
-                        glor_lengths.append(len(sample['glor_value']))
+                        glor = sample['glor_value']
+                    # Cap the spatiotemporal sequence like the spatial one, so a single long
+                    # video cannot create an unbounded (O(n^2)) sequence for the T5 encoder.
+                    if glor.shape[0] > max_frame_len:
+                        glor = glor[:max_frame_len]
+                    glor_values.append(glor)
+                    glor_lengths.append(len(glor))
 
         return {
             'pixel_values': pixel_values,
