@@ -38,7 +38,6 @@ def main():
     rows = []
     with open(args.csv_path, 'r', encoding='utf-8-sig') as f:
         reader = csv.DictReader(f,delimiter='|')
-        header = next(reader)
 
         for row in reader:
             rows.append(row)
