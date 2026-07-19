@@ -16,6 +16,27 @@ from utils.helpers import instantiate_from_config
 from spamo.callbacks import SetupCallback
 
 
+def load_dotenv(path: str = ".env") -> None:
+    """Load KEY=VALUE pairs from a .env file into os.environ.
+
+    Existing environment variables take precedence and are never overwritten.
+    Used so WANDB_API_KEY can be picked up by wandb without calling
+    wandb.login(), which would otherwise reject the new (>40 char) key format.
+    """
+    if not os.path.exists(path):
+        return
+    with open(path, "r", encoding="utf-8") as f:
+        for line in f:
+            line = line.strip()
+            if not line or line.startswith("#") or "=" not in line:
+                continue
+            key, _, value = line.partition("=")
+            key = key.strip()
+            value = value.strip().strip('"').strip("'")
+            if key and key not in os.environ:
+                os.environ[key] = value
+
+
 def str2bool(v: Any) -> bool:
     """Convert string representation to boolean.
     
@@ -260,6 +281,7 @@ def configure_logger(logger_type: str, logdir: str, nowname: str) -> Dict:
 
 def main():
     """Main entry point for training and testing."""
+    load_dotenv()
     now = datetime.datetime.now().strftime("%Y-%m-%dT%H-%M-%S")
     sys.path.append(os.getcwd())
     

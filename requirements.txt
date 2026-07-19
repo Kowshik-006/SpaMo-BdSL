@@ -24,3 +24,5 @@ rouge-score
 sentencepiece
 opencv-python
 gradio
+setuptools<70
+wheel
