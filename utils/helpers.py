@@ -83,7 +83,7 @@ def create_mask(seq_lengths: list, device="cpu"):
 
 def get_img_list(ds_name, vid_root, path):
     if ds_name == 'Phoenix14T':
-        img_path = os.path.join(vid_root, 'features', 'fullFrame-256x256px', path)
+        img_path = os.path.join(vid_root, path)
     elif ds_name == 'CSL-Daily':
         img_path = os.path.join(vid_root, 'CSL-Daily_256x256px', path)
     elif ds_name in ('Banglagov', 'BTVSL', 'isharakhobor'):
