@@ -148,9 +148,9 @@ def setup_logging_dirs(opt: argparse.Namespace) -> tuple:
         if not os.path.exists(opt.resume):
             raise ValueError(f"Cannot find checkpoint directory: {opt.resume}")
             
-        logdir = opt.resume.rstrip("/")
+        logdir = os.path.normpath(opt.resume)
         ckpt = os.path.join(logdir, "checkpoints", opt.ckpt) if opt.ckpt else None
-        nowname = logdir.split("/")[-1]
+        nowname = os.path.basename(logdir)
     else:
         if opt.name:
             name = "_" + opt.name
