@@ -5,11 +5,11 @@ model:
     lr: 6.0e-4
     monitor: val/bleu4
     model_name: google/flan-t5-xl
-    cache_dir: C:\Users\user\Desktop\spamo-kowshik\hf_cache
+    cache_dir: ./hf_cache
     inter_hidden: 768
     input_size: 2048
     beam_size: 5
-    max_frame_len: 256
+    max_frame_len: 384
     max_txt_len: 64
     frame_sample_rate: 1
     prompt: "Translate the given sentence into {}."
@@ -48,10 +48,10 @@ data:
     train:
       target: dataset.p14t.Phoenix14T
       params:
-        anno_root: C:\Users\user\Desktop\spamo-kowshik\PHOENIX-2014-T-release-v3\preprocess\Phoenix14T
-        vid_root: C:\Users\user\Desktop\spamo-kowshik\PHOENIX-2014-T-release-v3\PHOENIX-2014-T\features\fullFrame-210x260px
-        feat_root: C:\Users\user\Desktop\spamo-kowshik\PHOENIX-2014-T-release-v3\vit_features\clip-vit-large-patch14_feat_Phoenix14T
-        mae_feat_root: C:\Users\user\Desktop\spamo-kowshik\PHOENIX-2014-T-release-v3\mae_features\mae_feat_Phoenix14T
+        anno_root: ./preprocess/Phoenix14T
+        vid_root: /home/mdsr/CSLT-Kowshik-Adiba/Phoenix14T/frame_root
+        feat_root: /home/mdsr/CSLT-Kowshik-Adiba/SpaMo-BdSL/save/phoenix/clip-vit-large-patch14_feat_Phoenix14T
+        mae_feat_root: /home/mdsr/CSLT-Kowshik-Adiba/SpaMo-BdSL/save/phoenix/mae_feat_Phoenix14T
         mode: train
         spatial: true
         spatiotemporal: true
@@ -61,10 +61,10 @@ data:
     validation:
       target: dataset.p14t.Phoenix14T
       params:
-        anno_root: C:\Users\user\Desktop\spamo-kowshik\PHOENIX-2014-T-release-v3\preprocess\Phoenix14T
-        vid_root: C:\Users\user\Desktop\spamo-kowshik\PHOENIX-2014-T-release-v3\PHOENIX-2014-T\features\fullFrame-210x260px
-        feat_root: C:\Users\user\Desktop\spamo-kowshik\PHOENIX-2014-T-release-v3\vit_features\clip-vit-large-patch14_feat_Phoenix14T
-        mae_feat_root: C:\Users\user\Desktop\spamo-kowshik\PHOENIX-2014-T-release-v3\mae_features\mae_feat_Phoenix14T
+        anno_root: ./preprocess/Phoenix14T
+        vid_root: /home/mdsr/CSLT-Kowshik-Adiba/Phoenix14T/frame_root
+        feat_root: /home/mdsr/CSLT-Kowshik-Adiba/SpaMo-BdSL/save/phoenix/clip-vit-large-patch14_feat_Phoenix14T
+        mae_feat_root: /home/mdsr/CSLT-Kowshik-Adiba/SpaMo-BdSL/save/phoenix/mae_feat_Phoenix14T
         mode: test
         spatial: true
         spatiotemporal: true
@@ -74,10 +74,10 @@ data:
     test:
       target: dataset.p14t.Phoenix14T
       params:
-        anno_root: C:\Users\user\Desktop\spamo-kowshik\PHOENIX-2014-T-release-v3\preprocess\Phoenix14T
-        vid_root: C:\Users\user\Desktop\spamo-kowshik\PHOENIX-2014-T-release-v3\PHOENIX-2014-T\features\fullFrame-210x260px
-        feat_root: C:\Users\user\Desktop\spamo-kowshik\PHOENIX-2014-T-release-v3\vit_features\clip-vit-large-patch14_feat_Phoenix14T
-        mae_feat_root: C:\Users\user\Desktop\spamo-kowshik\PHOENIX-2014-T-release-v3\mae_features\mae_feat_Phoenix14T
+        anno_root: ./preprocess/Phoenix14T
+        vid_root: /home/mdsr/CSLT-Kowshik-Adiba/Phoenix14T/frame_root
+        feat_root: /home/mdsr/CSLT-Kowshik-Adiba/SpaMo-BdSL/save/phoenix/clip-vit-large-patch14_feat_Phoenix14T
+        mae_feat_root: /home/mdsr/CSLT-Kowshik-Adiba/SpaMo-BdSL/save/phoenix/mae_feat_Phoenix14T
         mode: test
         spatial: true
         spatiotemporal: true
