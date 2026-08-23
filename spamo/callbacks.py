@@ -49,6 +49,31 @@ class LoggingCallback(Callback):
         )
 
 
+class PeriodicLastCheckpoint(Callback):
+    """Save a full (resumable) checkpoint to ``last.ckpt`` every N epochs.
+
+    This complements the best-model ``ModelCheckpoint`` (which keeps the top
+    checkpoint by the monitored metric) and ``SetupCallback.on_exception``
+    (which writes ``last.ckpt`` on interruption/crash), giving a rolling resume
+    point that is refreshed on a fixed epoch cadence.
+    """
+
+    def __init__(self, ckptdir, every_n_epochs=10, filename="last.ckpt"):
+        super().__init__()
+        self.ckptdir = ckptdir
+        self.every_n_epochs = every_n_epochs
+        self.filename = filename
+
+    def on_train_epoch_end(self, trainer, pl_module):
+        if trainer.global_rank != 0 or self.every_n_epochs < 1:
+            return
+        if (trainer.current_epoch + 1) % self.every_n_epochs == 0:
+            ckpt_path = os.path.join(self.ckptdir, self.filename)
+            trainer.save_checkpoint(ckpt_path)
+            print(f"[INFO] Periodic checkpoint saved at epoch "
+                  f"{trainer.current_epoch + 1}: {ckpt_path}")
+
+
 class SetupCallback(Callback):
     def __init__(self, resume, now, logdir, ckptdir, cfgdir, config, lightning_config):
         super().__init__()

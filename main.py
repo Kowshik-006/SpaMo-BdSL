@@ -13,7 +13,7 @@ from pytorch_lightning.callbacks import EarlyStopping, ModelCheckpoint
 from pytorch_lightning.trainer import Trainer
 
 from utils.helpers import instantiate_from_config
-from spamo.callbacks import SetupCallback
+from spamo.callbacks import SetupCallback, PeriodicLastCheckpoint
 
 
 def str2bool(v: Any) -> bool:
@@ -182,7 +182,7 @@ def configure_callbacks(
             monitor=model.monitor, 
             auto_insert_metric_name=False, 
             save_top_k=1, 
-            save_last=True,
+            save_last=False,
             mode="max"
         ))
         callbacks.append(EarlyStopping(
@@ -195,13 +195,16 @@ def configure_callbacks(
             monitor=model.monitor, 
             auto_insert_metric_name=False, 
             save_top_k=1, 
-            save_last=True,
+            save_last=False,
             mode="min"
         ))
         callbacks.append(EarlyStopping(
             monitor=model.monitor, verbose=True, patience=50, mode="min"
         ))
     
+    # Rolling resume checkpoint: refresh last.ckpt every 10 epochs
+    callbacks.append(PeriodicLastCheckpoint(ckptdir=ckptdir, every_n_epochs=10))
+
     # Setup callback for logging configuration
     callbacks.append(SetupCallback(
         resume=opt.resume, 
